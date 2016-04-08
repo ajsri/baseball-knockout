@@ -5,34 +5,17 @@
     <link rel="stylesheet" href="mlb.css">
     <link href='https://fonts.googleapis.com/css?family=Work+Sans:400,700' rel='stylesheet' type='text/css'>
   </head>
-  <body ng-app="MLBApp">
-    <div ng-controller="ScoreController">
+  <body>
+    <div>
       <div class="container-fluid">
         <div class="row text-center">
           <div class="col-md-12 title">
-            <h1>MLB Game Schedule for {{dateName}}</h1>
+            <h1>MLB Schedule for <span data-bind="text: dateString"></span></h1>
           </div>
         </div>
         <div class="row">
-          <div class="col-md-12 games">
-            <!--Flex items -->
-            <div data-ng-repeat="game in games" class="game">
-              <div class="away">
-                <img ng-src="./images/{{game.away_name_abbrev}}.gif" />
-                <p ng-bind="game.away_team_city"></p>
-              </div>
-              <div class="home">
-                <img ng-src="./images/{{game.home_name_abbrev}}.gif" />
-                <p ng-bind="game.home_team_city"></p>
-              </div>
-              <div class="time">
-                <span ng-bind="game.away_time"></span> <span ng-bind="game.away_time_zone"></span>
-                <span ng-if="game.home_time_zone != game.away_time_zone">
-                  |
-                  <span ng-bind="game.home_time"></span> <span ng-bind="game.home_time_zone"></span>
-                </span>
-              </div>
-            </div>
+          <div class="col-md-12 games" data-bind="foreach: games">
+            <div data-bind="template: {name: 'game-card', data: $data}"></div>        
           </div>
         </div>
         <div class="row">
@@ -41,31 +24,45 @@
       </div>
     </div>
   </body>
+  <script type="text/html" id="game-card">
+    <div class="game">
+      <div class="away">
+        <img data-bind="attr: {src: './images/' + away_name_abbrev + '.gif'}" />
+        <p data-bind="text: away_team_city"></p>
+      </div>
+      <div class="home">
+        <img data-bind="attr: {src: './images/' + home_name_abbrev + '.gif'}" />
+        <p data-bind="text: home_team_city"></p>
+      </div>
+      <div class="time">
+        <span data-bind="text: away_time"></span> <span data-bind="text: away_time_zone"></span>
+        <span data-bind="if: home_time_zone != away_time_zone">
+          | <span data-bind="text: home_time"></span> <span data-bind="text: home_time_zone"></span>
+        </span>
+      </div>
+    </div>
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.0/angular.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.12.0/moment.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.0/knockout-debug.js"></script>
   <script>
-    var mlbApp = angular.module('MLBApp', []);
+    var mlbViewModel = {};
 
-    mlbApp.controller('ScoreController', function($scope, $http){
-      var date = new Date(),
-          month = date.getMonth() + 1,
-          day = date.getDate();
-      if(month < 10){
-        month = '0' + month;
-      }
-      if(day < 10) {
-        day = '0' + day;
-      }
-      $scope.baseURL = 'http://gd2.mlb.com/components/game/mlb/year_2016/month_'
-      $scope.date = month + '/day_' + day + '/master_scoreboard.json';
-      $scope.dateName = moment().format('MMMM Do YYYY');
-      $http.get($scope.baseURL + $scope.date)
-        .then(function(response){
-          $scope.scoreboard = response.data;
-          $scope.games = response.data.data.games.game;
-        });
+    var date = new Date(),
+        month = date.getMonth() + 1,
+        day = date.getDate();
+    if(month < 10){
+      month = '0' + month;
+    }
+    if(day < 10) {
+      day = '0' + day;
+    }
+    mlbViewModel.dateString = moment(date).format('MMMM Do YYYY');
+    var baseURL = 'http://gd2.mlb.com/components/game/mlb/year_2016/month_' + month + '/day_' + day + '/master_scoreboard.json';
+    $.getJSON(baseURL, function(response){
+      mlbViewModel.games = response.data.games.game;
+      ko.applyBindings(mlbViewModel);
     });
   </script>
 </html>
